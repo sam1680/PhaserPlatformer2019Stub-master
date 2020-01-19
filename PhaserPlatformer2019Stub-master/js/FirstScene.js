@@ -3,6 +3,8 @@ class FirstScene extends Phaser.Scene {
     cursors;
     platforms;
     stars;
+    stars5;
+    stars10;
     bombs;
     scoreText;
     score = 0;
@@ -15,6 +17,8 @@ class FirstScene extends Phaser.Scene {
         this.load.image('ground-1600', 'assets/platform-1600.png');
         this.load.image('ground-100', 'assets/platform-100.png');
         this.load.image('star', 'assets/star.png');
+        this.load.image('star-5', 'assets/star-5.png');
+        this.load.image('star-10', 'assets/star-10.png');
         this.load.image('bomb', 'assets/bomb.png');
         this.load.spritesheet('dude', 'assets/dude.png', {
             frameWidth: 32,
@@ -63,16 +67,24 @@ class FirstScene extends Phaser.Scene {
             },
         });
         this.stars.children.iterate(
-            function(child){
+            function (child) {
                 child.setBounceY(Phaser.Math.FloatBetween(0.2, 0.5));
             }
         );
         this.physics.add.collider(this.stars, this.platforms);
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
+        this.stars5 = this.physics.add.group();
+        this.physics.add.collider(this.stars5, this.platforms);
+        this.physics.add.overlap(this.player, this.stars5, this.collectStar5, null, this);
+        this.stars10 = this.physics.add.group();
+        this.physics.add.collider(this.stars10, this.platforms);
+        this.physics.add.overlap(this.player, this.stars10, this.collectStar10, null, this);
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
             fontSize: '32px',
             fill: '#000'
         }).setScrollFactor(0);
+        this.makeStars5();
+        this.makeStars10();
         this.makeBomb();
         // anims
         this.anims.create({
@@ -103,38 +115,64 @@ class FirstScene extends Phaser.Scene {
         })
     }
     update() {
-        if(!this.gameOver) {
-            if(this.cursors.left.isDown) {
+        if (!this.gameOver) {
+            if (this.cursors.left.isDown) {
                 this.player.setVelocityX(-160);
                 this.player.anims.play('left', true);
-            } else if(this.cursors.right.isDown) {
+            } else if (this.cursors.right.isDown) {
                 this.player.setVelocityX(160);
                 this.player.anims.play('right', true);
             } else {
                 this.player.setVelocityX(0);
                 this.player.anims.play('turn');
             }
-            if(Phaser.Input.Keyboard.JustDown(this.cursors.space) && this.player.jumpCount < 1) {
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && this.player.jumpCount < 1) {
                 this.player.jumpCount++;
                 this.player.setVelocityY(-250);
             }
-            if(this.player.body.touching.down) {
+            if (this.player.body.touching.down) {
                 this.player.jumpCount = 0;
             }
         }
     }
     collectStar(player, star) {
         star.disableBody(true, true);
-        this.score += 10;
+        this.score += 1;
         this.scoreText.setText('Score: ' + this.score);
-        if(this.stars.countActive(true) === 0) {
+        if (this.stars.countActive(true) === 0) {
             this.stars.children.iterate(
-                function(child) {
+                function (child) {
                     child.enableBody(true, child.x, 0, true, true);
                 }
             )
+            this.makeStars5();
+            this.makeStars10();
             this.makeBomb();
         }
+    }
+    makeStars5() {
+        let x = (this.player.x < 600) ? Phaser.Math.Between(600, 1200) : Phaser.Math.Between(0, 600);
+        let star5 = this.stars5.create(x, 0, 'star-5');
+        star5.setBounce(1);
+        star5.setCollideWorldBounds(true);
+        star5.setVelocity(Phaser.Math.Between(-50, 50), 5);
+    }
+    makeStars10() {
+        let x = (this.player.x < 600) ? Phaser.Math.Between(600, 1200) : Phaser.Math.Between(0, 600);
+        let star10 = this.stars10.create(x, 0, 'star-10');
+        star10.setBounce(1);
+        star10.setCollideWorldBounds(true);
+        star10.setVelocity(Phaser.Math.Between(-150, 150), 10);
+    }
+    collectStar5(player, star5) {
+        star5.disableBody(true, true);
+        this.score += 5;
+        this.scoreText.setText('Score: ' + this.score);
+    }
+    collectStar10(player, star10) {
+        star10.disableBody(true, true);
+        this.score += 10;
+        this.scoreText.setText('Score: ' + this.score);
     }
     makeBomb() {
         let x = (this.player.x < 600) ? Phaser.Math.Between(600, 1200) : Phaser.Math.Between(0, 600);
@@ -148,5 +186,6 @@ class FirstScene extends Phaser.Scene {
         this.physics.pause();
         this.player.setTint(0xff0000);
         this.player.anims.play('turn');
+        this.gameOver = true;
     }
 }
